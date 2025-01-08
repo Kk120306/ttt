@@ -32,3 +32,17 @@ body{
 .bottom-border{
     border-bottom: 0.2em solid yellow;
 }
+
+h1{
+    font-size: 3em; 
+    color: white;
+}
+
+.player-turn{
+    color: white;
+    font-size: 12px;
+}
+
+button{
+    padding: 10px;
+}

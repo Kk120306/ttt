@@ -1,3 +1,5 @@
+const playerText = document.querySelector('.player-turn');
+
 const Gameboard = (function () {
     const board = [
         [null, null, null],
@@ -62,7 +64,8 @@ const Gameboard = (function () {
 // Gamecontroller module
 const Gamecontroller = (function() {
     let currentPlayer = "X";
-    let gameOver = false; 
+    let gameOver = false;
+    
 
     function playTurn(rowNum, colNum) {
         if (gameOver) {
@@ -75,27 +78,26 @@ const Gamecontroller = (function() {
             return false;
         }
 
-
-        const tiles = document.querySelectorAll(".tile");
         const index = rowNum * 3 + colNum;
         tiles[index].textContent = currentPlayer;
 
 
         if (Gameboard.checkWinner(currentPlayer)) {
-            console.log(`${currentPlayer} wins!`);
+            playerText.innerText =`${currentPlayer} wins!`
             gameOver = true;
             return true;
         }
 
         
         if (Gameboard.isTie()) {
-            console.log("It's a tie!");
+            playerText.innerText = "It's a tie!";
             gameOver = true; 
             return true;
         }
 
         
         currentPlayer = currentPlayer === "X" ? "O" : "X";
+        playerText.innerText = `It is ${currentPlayer}'s turn`;
         return true;
     }
 
@@ -103,7 +105,7 @@ const Gamecontroller = (function() {
         Gameboard.resetBoard();
         currentPlayer = "X";
         gameOver = false; 
-
+        
         const tiles = document.querySelectorAll(".tile");
         tiles.forEach(tile => {
             tile.textContent = ""; 
@@ -155,4 +157,5 @@ const resetButton = document.querySelector("#reset-button");
 resetButton.addEventListener("click", () => {
     Gamecontroller.resetGame();
     Displaycontainer.resetBoard(tiles);
+    playerText.innerText = "It is X's turn";
 });
