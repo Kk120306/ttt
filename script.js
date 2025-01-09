@@ -1,161 +1,137 @@
 const playerText = document.querySelector('.player-turn');
+const tiles = document.querySelectorAll(".tile");
+const resetButton = document.querySelector("#reset-button");
 
-const Gameboard = (function () {
-    const board = [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null]    
-    ];
+class Gameboard {
+    constructor() {
+        this.board = [
+            [null, null, null],
+            [null, null, null],
+            [null, null, null]
+        ];
+    }
 
-    function placePick(rowNum, colNum, symbol) {
-        if (board[rowNum][colNum] !== null) {
+    placePick(rowNum, colNum, symbol) {
+        if (this.board[rowNum][colNum] !== null) {
             return false;
         } else {
-            board[rowNum][colNum] = symbol;
+            this.board[rowNum][colNum] = symbol;
+            return true;
         }
-        return true;
     }
 
-    function getBoard() {
-        return board;
-    }
-
-    function resetBoard() {
-        for (let row = 0; row < board.length; row++) {
-            for (let col = 0; col < board[row].length; col++) {
-                board[row][col] = null;
+    resetBoard() {
+        for (let row = 0; row < this.board.length; row++) {
+            for (let col = 0; col < this.board[row].length; col++) {
+                this.board[row][col] = null;
             }
         }
     }
 
-    function checkWinner(symbol) {
-
-        for (let row of board) {
+    checkWinner(symbol) {
+        // Check rows
+        for (let row of this.board) {
             if (row.every(cell => cell === symbol)) return true;
         }
 
-
-        for (let col = 0; col < board.length; col++) {
-            if (board.every(row => row[col] === symbol)) {
+        // Check columns
+        for (let col = 0; col < this.board.length; col++) {
+            if (this.board.every(row => row[col] === symbol)) {
                 return true;
             }
         }
 
-
-        if (board.every((row, idx) => row[idx] === symbol)) {
-            return true;
-        }
-
-
-        if (board.every((row, idx) => row[board.length - 1 - idx] === symbol)) {
-            return true;
-        }
+        // Check diagonals
+        if (this.board.every((row, idx) => row[idx] === symbol)) return true;
+        if (this.board.every((row, idx) => row[this.board.length - 1 - idx] === symbol)) return true;
 
         return false;
     }
 
-    function isTie() {
-        return board.every(row => row.every(cell => cell !== null));
+    isTie() {
+        return this.board.every(row => row.every(cell => cell !== null));
+    }
+}
+
+class Gamecontroller {
+    constructor() {
+        this.currentPlayer = "X";
+        this.gameOver = false;
+        this.gameboard = new Gameboard();
     }
 
-    return { placePick, getBoard, resetBoard, checkWinner, isTie };
-})();
-
-// Gamecontroller module
-const Gamecontroller = (function() {
-    let currentPlayer = "X";
-    let gameOver = false;
-    
-
-    function playTurn(rowNum, colNum) {
-        if (gameOver) {
+    playTurn(rowNum, colNum) {
+        if (this.gameOver) {
             alert("Game over! Click reset to start a new game.");
-            return false;
+            return ;
         }
 
-        if (Gameboard.placePick(rowNum, colNum, currentPlayer) === false) {
+        if (!this.gameboard.placePick(rowNum, colNum, this.currentPlayer)) {
             alert("This position has already been taken");
-            return false;
+            return ;
         }
 
+        // Update the UI
         const index = rowNum * 3 + colNum;
-        tiles[index].textContent = currentPlayer;
+        tiles[index].textContent = this.currentPlayer;
 
+        // Check for winner
+        if (this.gameboard.checkWinner(this.currentPlayer)) {
+            playerText.innerText = `${this.currentPlayer} wins!`;
+            this.gameOver = true;
 
-        if (Gameboard.checkWinner(currentPlayer)) {
-            playerText.innerText =`${currentPlayer} wins!`
-            gameOver = true;
-            return true;
         }
 
-        
-        if (Gameboard.isTie()) {
+        // Check for tie
+        if (this.gameboard.isTie()) {
             playerText.innerText = "It's a tie!";
-            gameOver = true; 
-            return true;
+            this.gameOver = true;
+
         }
 
-        
-        currentPlayer = currentPlayer === "X" ? "O" : "X";
-        playerText.innerText = `It is ${currentPlayer}'s turn`;
-        return true;
+        // Switch player
+        this.currentPlayer = this.currentPlayer === "X" ? "O" : "X";
+        playerText.innerText = `It is ${this.currentPlayer}'s turn`;
+
     }
 
-    function resetGame() {
-        Gameboard.resetBoard();
-        currentPlayer = "X";
-        gameOver = false; 
-        
-        const tiles = document.querySelectorAll(".tile");
+    resetGame() {
+        this.gameboard.resetBoard();
+        this.currentPlayer = "X";
+        this.gameOver = false;
+
         tiles.forEach(tile => {
-            tile.textContent = ""; 
+            tile.textContent = ""; // Clear the tiles
         });
+
+        playerText.innerText = "It is X's turn";
     }
 
-    function getCurrentPlayerSymbol() {
-        return currentPlayer;
+}
+
+class Displaycontainer {
+    constructor(gameController) {
+        this.gameController = gameController;
     }
 
-    function getGameOver() {
-        return gameOver; 
-    }
-
-    return { playTurn, resetGame, getCurrentPlayerSymbol, getGameOver };
-})();
-
-
-const Displaycontainer = (function () {
-    const init = (tiles) => {
+    init() {
         tiles.forEach(tile => {
-            tile.addEventListener("click", () => {
+            tile.addEventListener("click", (event) => {
                 const index = tile.dataset.index;
                 const row = Math.floor(index / 3);
                 const col = index % 3;
 
-                if (Gamecontroller.playTurn(row, col)) {
-                    if (Gamecontroller.getGameOver()) {
-                        tiles.forEach(t => t.removeEventListener("click", () => {})); 
-                    }
-                }
+                this.gameController.playTurn(row, col);
             });
         });
-    };
 
-    const resetBoard = (tiles) => {
-        tiles.forEach(tile => (tile.textContent = ""));
-    };
+        resetButton.addEventListener("click", () => {
+            this.gameController.resetGame();
+        });
+    }
+}
 
-    return { init, resetBoard };
-})();
-
-
-const tiles = document.querySelectorAll(".tile");
-Displaycontainer.init(tiles);
-
-
-const resetButton = document.querySelector("#reset-button");
-resetButton.addEventListener("click", () => {
-    Gamecontroller.resetGame();
-    Displaycontainer.resetBoard(tiles);
-    playerText.innerText = "It is X's turn";
-});
+// Initialize game
+const gameController = new Gamecontroller();
+const display = new Displaycontainer(gameController);
+display.init();
